@@ -72,7 +72,8 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-center">
-                            <a href="#" class="btn btn-success " data-toggle="modal" data-target="#addModal">新增分类</a>
+                            <a href="#" class="btn btn-success addModal" data-toggle="modal"
+                                data-target="#addModal">新增分类</a>
                         </td>
                     </tr>
                 </tfoot>
@@ -89,13 +90,14 @@
                 </div>
                 <div class="modal-body">
                     <form>
+                        <input type="hidden" class="id_one" name="id"">
                         <div class="form-group">
                             <label for="recipient-name" class="control-label">分类名称:</label>
-                            <input type="text" class="form-control addfenlei" id="recipient-name">
+                            <input type="text" class="form-control addfenlei" id="recipient-name" name="name">
                         </div>
                         <div class="form-group">
                             <label for="message-text" class="control-label ">分类别名:</label>
-                            <input type="text" class="form-control " id="recipient-name">
+                            <input type="text" class="form-control addbieming" id="recipient-name" name="slug">
                         </div>
                     </form>
                 </div>
@@ -114,8 +116,8 @@
         <td>{{$value.slug}}</td>
         <td class="text-center">
             <a href="javascript:editTr({&quot;id&quot;:&quot;2&quot;,&quot;slug&quot;:&quot;funny&quot;,&quot;name&quot;:&quot;奇趣事&quot;});"
-                class="btn btn-info btn-xs">编辑</a>
-            <a href="javascript:deleteTr( 2 );" class="btn btn-danger btn-xs shanchu" id = '{{$value.id}}'>删除</a>
+                class="btn btn-info btn-xs bianji" data_id = '{{$value.id}}'>编辑</a>
+            <a href="javascript:deleteTr( 2 );" class="btn btn-danger btn-xs shanchu " data_id = '{{$value.id}}'>删除</a>
         </td>
     </tr>
     {{/each}}
@@ -151,8 +153,6 @@
                 data: {
                 },
                 success: function (backData) {
-                    console.log(backData);
-
                     //调用tem核心方法
                     var tem = template('tem', backData);
                     //渲染到页面
@@ -162,63 +162,136 @@
         }
         //在页面打开时就调用这个函数
         shuaxin();
-
+        //因为编辑和新增使用的是一个模态框 所以要动态修改点击不同按钮时 模态框的状态
+        $('.addModal').on('click', function () {
+            $('#addModal').removeClass('jiance');
+        })
+        //模态框点击事件
         $('#model_add').on('click', function () {
-            var addfenlei = $('.addfenlei').val();
-            var addbieming = $('#recipient-name').val();
+            if ($('#addModal').hasClass('jiance')) {
+                var data1 = $('form').serialize();
+                console.log(data1);
+                //发送ajax请求
+                $.ajax({
+                    type: 'post',
+                    url: 'http://localhost:8000/admin/category_edit',
+                    
+                    data: data1,
+                
+                    success: function (backData) {
+                        console.log(backData);
+                        
+                        if(backData.code == 200){
+                            shuaxin();
+                        }
+                    }
+                })
+                /* 
+                var data1 = $('form').serialize(); 
+                    console.log(data1);
+                    //表单序列化
+                    //把form表单中带有name属性的标签的值,获取出来,组成key=value&key=value这种格式的字符串.
+
+                    //发送ajax请求
+                    $.ajax({
+                        type:'post',
+                        url:'http://localhost:8000/admin/category_edit',
+                        // data:{
+                        //     id:cataId,
+                        //     name:cataName,
+                        //     slug:cataSlug
+                        // },
+                        data:data1,
+                        success:function(backData){
+                            console.log(backData);
+                            //修改成功后,修改dom树里面的元素
+                            if(backData.code == 200){
+                                getCataData();
+                            }
+                        }
+                    });
+                 */
+
+            } else {
+                var addfenlei = $('.addfenlei').val();
+                var addbieming = $('.addbieming').val();
+                $.ajax({
+                    type: 'post',
+                    url: 'http://localhost:8000/admin/category_add',
+                    data: {
+                        name: addfenlei,
+                        slug: addbieming
+                    },
+                    success: function (backData) {
+                        //点击新增后把刚刚新增的数据加到页面中 直接可以调用刷新函数
+                        if (backData.code == 200) {
+                            shuaxin();
+                        }
+                    }
+                })
+            }
+
+        })
+
+        //委托注册  td是动态生成的
+        $('tbody').on('click', '.shanchu', function () {
+
+
+
+            //  获取存进tr中的id
+            var id = $(this).attr('id');
+            console.log(id);
+            
+
+            //要请求ajax传递的是id值  所以先获取存在删除input里的id
             $.ajax({
                 type: 'post',
-                url: 'http://localhost:8000/admin/category_add',
+                url: 'http://localhost:8000/admin/category_delete',
                 data: {
-                    name: addfenlei,
-                    slug: addbieming
+                    id: id
                 },
                 success: function (backData) {
-                    //点击新增后把刚刚新增的数据加到页面中 直接可以调用刷新函数
-                    if (backData.code == 200) {
+                    if (confirm('确认删除吗')) {
+                        //调用函数动态修改tbody的内容
                         shuaxin();
                     }
+
                 }
             })
         })
 
         /* 
-        1.给删除按钮们注册事件.  使用委托的方式.
+        1.编辑按钮也是动态生成的, 所以给他注册事件也要委托的方式注册.
 
-        2.删除逻辑里面如何知道删除的是哪一个数据呢? 通过id区分.
+        2.在编辑逻辑里面,要传过来id,要告诉编辑逻辑编辑的是哪一个文章类别.
         
-        ​	搞一个自定义属性data-id来保存id
+        3.编辑操作分为2步, 一步是显示修改之前的信息, 一步是把修改后的数据获取后发送ajax请求去修改.\
         
-        3.根据id删除文章类别的接口通过验证没有问题
+        4.新增和编辑使用的是同一个模态框, 所以模态框显示信息,或者某些按钮要做一些修改
         
-        4.删除成功后,重新的再渲染一次数据
+        5.新增和编辑弹出的是同一个模态框, 那模态框里面的新增(保存)按钮要处理2套逻辑. */
 
-​        数据是确定删除成功了的, 那现在呢需求是不要看到删除的这一行,
+        //给编辑注册点击事件 委托方式 只需要显示编辑框就行
+        $('tbody').on('click', '.bianji', function () {
 
-​        我们现在的做法是重新渲染,那如果数据量很大的话, 重新渲染就消耗时间.
+            //获取当前名称和别名和之前子删除input存的id值
+            var aaa = $(this).parent().prev().prev().text();
+            var bbb = $(this).parent().prev().text();
+            var id= $(this).attr('data_id');
+            console.log(id);
+            
+            //把对应的内容显示在框的input中
+            $('.addfenlei').val(aaa);
+            $('.addbieming').val(bbb);
+            //把删除里对应的id值赋给模态框的input中
+            $('.id_one').val(id);
+            //删除模态框的类名
+            $('#addModal').addClass('jiance');
 
-​        所以我们可以搞一个障眼法, 把直接把这一行 从 dom树中移除 就ok.
-         */
-
-        $('tbody').on('click', '.shanchu', function () {
-            //  获取存进tr中的id
-            var id= $(this).attr('id');
-           
-  
-            $.ajax({
-                type: 'post',
-                url: 'http://localhost:8000/admin/category_delete',
-                data: {
-                    id:id
-                },
-                success: function (backData) {
-                    if( confirm('确认删除吗')){
-                        shuaxin();
-                    }
-                    
-                }
-            })
         })
+
+
+
     </script>
 
 </body>
