@@ -72,7 +72,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-center">
-                            <a href="#" class="btn btn-success" data-toggle="modal" data-target="#addModal">新增分类</a>
+                            <a href="#" class="btn btn-success " data-toggle="modal" data-target="#addModal">新增分类</a>
                         </td>
                     </tr>
                 </tfoot>
@@ -80,56 +80,124 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addModal" >
+    <div class="modal fade" id="addModal">
         <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
-              <h4 class="modal-title">新增分类</h4>
-            </div>
-            <div class="modal-body">
-              <form>
-                <div class="form-group">
-                  <label for="recipient-name" class="control-label">分类名称:</label>
-                  <input type="text" class="form-control" id="recipient-name">
+            <div class="modal-content addbox">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
+                    <h4 class="modal-title">新增分类</h4>
                 </div>
-                <div class="form-group">
-                  <label for="message-text" class="control-label">分类别名:</label>
-                  <input type="text" class="form-control" id="recipient-name">
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="recipient-name" class="control-label">分类名称:</label>
+                            <input type="text" class="form-control addfenlei" id="recipient-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label ">分类别名:</label>
+                            <input type="text" class="form-control " id="recipient-name">
+                        </div>
+                    </form>
                 </div>
-              </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" id="model_shutoff">关闭</button>
+                    <button type="button" class="btn btn-primary" id="model_add">新增</button>
+                </div>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-default" id="model_shutoff">关闭</button>
-              <button type="button" class="btn btn-primary" id="model_add">新增</button>
-            </div>
-          </div>
         </div>
-      </div>
+    </div>
+    <script src="./js/template-web.js"></script>
+    <script id='tem' type='text/html'>
+    {{each data}}
+    <tr class = '{{$value.id}}'>
+        <td>{{$value.name}}</td>
+        <td>{{$value.slug}}</td>
+        <td class="text-center">
+            <a href="javascript:editTr({&quot;id&quot;:&quot;2&quot;,&quot;slug&quot;:&quot;funny&quot;,&quot;name&quot;:&quot;奇趣事&quot;});"
+                class="btn btn-info btn-xs">编辑</a>
+            <a href="javascript:deleteTr( 2 );" class="btn btn-danger btn-xs">删除</a>
+        </td>
+    </tr>
+    {{/each}}
+    </script>
 
-      <script>
-          $('#addModal').modal({
-            show:false,
-            backdrop:false
-          });
+    <script>
+        $('#addModal').modal({
+            show: false,
+            backdrop: false
+        });
 
-          $('#model_shutoff').click(function(){
+        $('#model_shutoff').click(function () {
             alert('shutoff');
             $('#addModal').modal('hide');
-          });
+        });
 
-          $('#model_add').click(function(){
+        $('#model_add').click(function () {
             alert('add');
             $('#addModal').modal('hide');
-          });
+        });
 
-          $('.category_table').delegate('a','click',function(){
-              if($(this).hasClass('btn-info')){
+        $('.category_table').delegate('a', 'click', function () {
+            if ($(this).hasClass('btn-info')) {
                 $('#addModal .modal-title').html('修改分类名称');
                 $('#addModal').modal('show');
-              }
-          })      
-      </script>
+            }
+        })
+        /* 
+        #### 分类新增
+
+      1.给新增按钮设置一个点击事件.
+      
+                注意: 以前写静态模板的时候默认有一个点击事件.要么删掉,要么自己改改.
+      
+      2.获取用户输入的类别名称和别名
+      
+      3.发送ajax请求
+      
+      4.新增成功后,再重新获取一次文章类别
+
+         注意:页面一进来要获取,  新增成功后也要获取, 所以可以搞成一个函数调用. */
+        // 发送ajax请求 把数据渲染到页面
+        
+        //封装一个发送ajax请求 并且渲染到页面的函数
+        function shuaxin() {
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8000/admin/category_search ',
+                data: {
+                },
+                success: function (backData) {
+                    console.log(backData);
+                    
+                    //调用tem核心方法
+                    var tem = template('tem', backData);
+                    //渲染到页面
+                    $('tbody').html(tem);
+                }
+            })
+        }
+        //在页面打开时就调用这个函数
+        shuaxin();
+
+        $('#model_add').on('click', function () {
+            var addfenlei = $('.addfenlei').val();
+            var addbieming = $('#recipient-name').val();
+            $.ajax({
+                type: 'post',
+                url: 'http://localhost:8000/admin/category_add',
+                data: {
+                    name: addfenlei,
+                    slug: addbieming
+                },
+                success: function (backData) {
+                    //点击新增后把刚刚新增的数据加到页面中 直接可以调用刷新函数
+                   if(backData.code == 200){
+                       shuaxin();
+                   }
+                }
+            })
+        })
+    </script>
 
 </body>
 
